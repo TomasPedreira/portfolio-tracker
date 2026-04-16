@@ -43,3 +43,19 @@ double Position::gain_loss_percent() const {
 
     return gain_loss() / cost_basis() * 100.0;
 }
+
+void Position::update_stock_price(double price) {
+    stock_.set_current_price(price);
+}
+
+void Position::set_buy_price(double buy_price) {
+    buy_price_ = buy_price;
+}
+
+void Position::set_acquisition_date(std::string acquisition_date) {
+    acquisition_date_ = std::move(acquisition_date);
+}
+
+void Position::set_amount(double amount) {
+    amount_ = amount;
+}

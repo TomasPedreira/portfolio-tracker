@@ -16,11 +16,12 @@ endif()
 
 add_executable(portfolio_tracker
     src/main.cpp
+    src/app_config.cpp
     src/portfolio_app.cpp
+    src/portfolio_file.cpp
     src/portfolio.cpp
     src/portfolio_renderer.cpp
     src/position.cpp
-    src/sample_data.cpp
     src/stock.cpp
 )
 

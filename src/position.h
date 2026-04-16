@@ -19,6 +19,11 @@ public:
     double gain_loss() const;
     double gain_loss_percent() const;
 
+    void update_stock_price(double price);
+    void set_buy_price(double buy_price);
+    void set_acquisition_date(std::string acquisition_date);
+    void set_amount(double amount);
+
 private:
     Stock stock_;
     double buy_price_;
