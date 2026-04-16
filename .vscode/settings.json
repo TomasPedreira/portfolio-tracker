@@ -1,0 +1,13 @@
+{
+    "files.exclude": {
+        "**/build": true,
+        "**/build/**": true
+    },
+    "search.exclude": {
+        "**/build": true,
+        "**/build/**": true
+    },
+    "git.ignoredRepositories": [
+        "build/_deps/raylib-src"
+    ]
+}
