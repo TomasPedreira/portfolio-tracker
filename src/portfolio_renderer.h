@@ -5,6 +5,7 @@
 #include "raylib.h"
 
 #include <algorithm>
+#include <set>
 #include <string>
 
 // ── Add-position panel ────────────────────────────────────────────────────────
@@ -38,26 +39,9 @@ struct SavePopupState {
     std::string error;
 };
 
-// ── Stock panel ───────────────────────────────────────────────────────────────
+// ── Portfolio panel (unified stocks + positions) ──────────────────────────────
 
 constexpr int kStockAddFieldCount = 3;  // symbol, name, price
-
-inline int stock_panel_width(int screen_width, bool open) {
-    return open ? std::clamp(screen_width * 20 / 100, 230, 310) : 36;
-}
-
-struct StockPanelState {
-    bool open          = true;   // default expanded
-    int  selected      = -1;
-    bool editing_price = false;
-    char price_buf[64] = {};
-
-    bool add_open   = false;
-    int  add_active = 0;
-    char add_fields[kStockAddFieldCount][128] = {};
-
-    std::string error;
-};
 
 enum class PositionEditField {
     Amount,
@@ -65,11 +49,22 @@ enum class PositionEditField {
     Date,
 };
 
-struct PositionTableState {
-    int selected = -1;
-    bool editing = false;
+struct PortfolioPanelState {
+    std::set<std::string> expanded;
+
+    int  selected_stock = -1;
+    bool editing_price  = false;
+    char price_buf[64]  = {};
+
+    int  editing_stock_idx    = -1;
+    int  editing_position_idx = -1;
     PositionEditField editing_field = PositionEditField::Amount;
     char edit_buf[128] = {};
+
+    bool add_open   = false;
+    int  add_active = 0;
+    char add_fields[kStockAddFieldCount][128] = {};
+
     std::string error;
 };
 
@@ -79,22 +74,20 @@ class PortfolioRenderer {
 public:
     void  draw(const Portfolio& portfolio, float scroll_offset,
                const AddPanelState& panel, const SavePopupState& save_popup,
-               const StockPanelState& stock_panel,
-               const PositionTableState& position_table) const;
+               const PortfolioPanelState& panel_state) const;
 
     float max_scroll_offset(const Portfolio& portfolio, int screen_height,
-                            const AddPanelState& panel) const;
+                            const AddPanelState& panel,
+                            const PortfolioPanelState& panel_state) const;
 
 private:
     void draw_header(const Portfolio& portfolio, int screen_width,
                      const SavePopupState& save_popup) const;
     void draw_summary_card(Rectangle bounds, const char* label,
                            const std::string& value, Color accent) const;
-    void draw_stock_panel(const Portfolio& portfolio, Rectangle bounds,
-                          const StockPanelState& sp) const;
-    void draw_positions_table(const Portfolio& portfolio, Rectangle bounds,
+    void draw_portfolio_panel(const Portfolio& portfolio, Rectangle bounds,
                               float scroll_offset,
-                              const PositionTableState& position_table) const;
+                              const PortfolioPanelState& state) const;
     void draw_input_panel(const AddPanelState& panel,
                           int screen_width, int screen_height) const;
     void draw_save_popup(const SavePopupState& popup,

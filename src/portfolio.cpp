@@ -85,6 +85,13 @@ const std::vector<Stock>& Portfolio::stocks() const {
     return stocks_;
 }
 
+std::vector<std::size_t> Portfolio::position_indices_for(const std::string& symbol) const {
+    std::vector<std::size_t> out;
+    for (std::size_t i = 0; i < positions_.size(); ++i)
+        if (positions_[i].stock().symbol() == symbol) out.push_back(i);
+    return out;
+}
+
 // ── Totals ────────────────────────────────────────────────────────────────────
 
 double Portfolio::total_cost_basis() const {

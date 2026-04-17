@@ -25,6 +25,8 @@ public:
     void update_stock_price(const std::string& symbol, double price);
     const std::vector<Stock>& stocks() const;
 
+    std::vector<std::size_t> position_indices_for(const std::string& symbol) const;
+
     // Totals
     double total_cost_basis() const;
     double total_current_value() const;
