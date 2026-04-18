@@ -34,23 +34,39 @@ static constexpr int kAsGap   = 12;
 
 static int table_top_px() { return kHdrH + kSumH + kTblGap; }
 
-// Column x positions — must mirror panel_cols() in renderer.
+// Column x positions — must mirror stock_cols() and pos_cols() in renderer.
 struct PanelCols {
     int bx, bw;
     int arrow_x, sym_x, name_x, cur_x, amt_x, buy_x, val_x, gain_x, date_x, del_x;
 };
+struct PosCols {
+    int dash_x, date_x, amt_x, buy_x, val_x, gain_x, del_x;
+};
+
 static PanelCols make_cols(int bx, int bw) {
     PanelCols c{};
     c.bx     = bx;  c.bw     = bw;
     c.arrow_x = bx + 10;
     c.sym_x  = bx + 40;
-    c.name_x = bx + bw * 14 / 100;
-    c.cur_x  = bx + bw * 34 / 100;
-    c.amt_x  = bx + bw * 48 / 100;
-    c.buy_x  = bx + bw * 58 / 100;
-    c.val_x  = bx + bw * 68 / 100;
-    c.gain_x = bx + bw * 80 / 100;
-    c.date_x = bx + bw * 87 / 100;
+    c.name_x = bx + bw * 16 / 100;
+    c.cur_x  = bx + bw * 44 / 100;
+    c.amt_x  = bx + bw * 58 / 100;
+    c.buy_x  = bx + bw * 48 / 100;
+    c.val_x  = bx + bw * 71 / 100;
+    c.gain_x = bx + bw * 83 / 100;
+    c.date_x = bx + bw * 14 / 100;
+    c.del_x  = bx + bw - 34;
+    return c;
+}
+
+static PosCols make_pos_cols(int bx, int bw) {
+    PosCols c{};
+    c.dash_x = bx + 10;
+    c.date_x = bx + bw * 14 / 100;
+    c.amt_x  = bx + bw * 34 / 100;
+    c.buy_x  = bx + bw * 48 / 100;
+    c.val_x  = bx + bw * 62 / 100;
+    c.gain_x = bx + bw * 76 / 100;
     c.del_x  = bx + bw - 34;
     return c;
 }
@@ -271,6 +287,9 @@ void PortfolioApp::input() {
     if (IsKeyDown(KEY_UP))    scroll_offset_ -= 8.f;
     if (IsKeyPressed(KEY_HOME)) scroll_offset_ = 0.f;
 
+    const float max_offset = renderer_.max_scroll_offset(portfolio_, sh, panel_, panel_state_);
+    scroll_offset_ = std::clamp(scroll_offset_, 0.f, max_offset);
+
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
         const Vector2 m = GetMousePosition();
         const int panel_top = sh - panel_tab_height(sh);
@@ -344,6 +363,7 @@ bool PortfolioApp::handle_portfolio_panel_click(const Vector2& mouse, int screen
 
     // ── Scrollable list ───────────────────────────────────────────────────────
     const PanelCols c = make_cols(bx, bw);
+    const PosCols pc = make_pos_cols(bx, bw);
     const auto& stocks = portfolio_.stocks();
     int y = list_top - (int)scroll_offset_;
 
@@ -402,10 +422,11 @@ bool PortfolioApp::handle_portfolio_panel_click(const Vector2& mouse, int screen
 
         // Position sub-rows (only if expanded)
         if (panel_state_.expanded.count(stocks[i].symbol())) {
+            y += kPanelColHdrH;  // Skip the position sub-header row
             for (std::size_t idx : portfolio_.position_indices_for(stocks[i].symbol())) {
                 if (mouse.y >= y && mouse.y < y + kPosRowH) {
                     // Delete
-                    if (mouse.x >= c.del_x && mouse.x <= c.del_x + 22) {
+                    if (mouse.x >= pc.del_x && mouse.x <= pc.del_x + 22) {
                         if (panel_state_.editing_position_idx == (int)idx)
                             { panel_state_.editing_position_idx = -1; panel_state_.editing_stock_idx = -1; }
                         portfolio_.remove_position_at(idx);
@@ -413,7 +434,7 @@ bool PortfolioApp::handle_portfolio_panel_click(const Vector2& mouse, int screen
                         return true;
                     }
                     // Amount column
-                    if (mouse.x >= c.amt_x && mouse.x < c.buy_x) {
+                    if (mouse.x >= pc.amt_x && mouse.x < pc.buy_x) {
                         panel_state_.editing_stock_idx    = i;
                         panel_state_.editing_position_idx = (int)idx;
                         panel_state_.editing_field        = PositionEditField::Amount;
@@ -426,7 +447,7 @@ bool PortfolioApp::handle_portfolio_panel_click(const Vector2& mouse, int screen
                         return true;
                     }
                     // Buy price column
-                    if (mouse.x >= c.buy_x && mouse.x < c.val_x) {
+                    if (mouse.x >= pc.buy_x && mouse.x < pc.val_x) {
                         panel_state_.editing_stock_idx    = i;
                         panel_state_.editing_position_idx = (int)idx;
                         panel_state_.editing_field        = PositionEditField::BuyPrice;
@@ -439,7 +460,7 @@ bool PortfolioApp::handle_portfolio_panel_click(const Vector2& mouse, int screen
                         return true;
                     }
                     // Date column
-                    if (mouse.x >= c.date_x && mouse.x < c.del_x) {
+                    if (mouse.x >= pc.date_x && mouse.x < pc.amt_x) {
                         panel_state_.editing_stock_idx    = i;
                         panel_state_.editing_position_idx = (int)idx;
                         panel_state_.editing_field        = PositionEditField::Date;

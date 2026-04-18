@@ -1,5 +1,6 @@
 #include "portfolio_renderer.h"
 
+#include "gui/utils.h"
 #include "position.h"
 
 #include <algorithm>
@@ -61,25 +62,40 @@ FormMetrics compute_form(int screen_width, int screen_height, int form_top, int 
     return m;
 }
 
-// Column x positions for the unified portfolio panel.
-struct PanelCols {
+// Column x positions for collapsed stock rows and their header.
+struct StockCols {
     int bx, bw;
-    int arrow_x, sym_x, name_x, cur_x, amt_x, buy_x, val_x, gain_x, date_x, del_x;
+    int arrow_x, sym_x, name_x, cur_x, amt_x, val_x, gain_x, del_x;
 };
 
-PanelCols panel_cols(int bx, int bw) {
-    PanelCols c{};
-    c.bx     = bx;
-    c.bw     = bw;
+StockCols stock_cols(int bx, int bw) {
+    StockCols c{};
+    c.bx      = bx;
+    c.bw      = bw;
     c.arrow_x = bx + 10;
-    c.sym_x  = bx + 40;
-    c.name_x = bx + bw * 14 / 100;
-    c.cur_x  = bx + bw * 34 / 100;
-    c.amt_x  = bx + bw * 48 / 100;
-    c.buy_x  = bx + bw * 58 / 100;
-    c.val_x  = bx + bw * 68 / 100;
-    c.gain_x = bx + bw * 80 / 100;
-    c.date_x = bx + bw * 87 / 100;
+    c.sym_x   = bx + 40;
+    c.name_x  = bx + bw * 16 / 100;
+    c.cur_x   = bx + bw * 44 / 100;
+    c.amt_x   = bx + bw * 58 / 100;
+    c.val_x   = bx + bw * 71 / 100;
+    c.gain_x  = bx + bw * 83 / 100;
+    c.del_x   = bx + bw - 34;
+    return c;
+}
+
+// Column x positions for expanded position sub-rows and their sub-header.
+struct PosCols {
+    int dash_x, date_x, amt_x, buy_x, val_x, gain_x, del_x;
+};
+
+PosCols pos_cols(int bx, int bw) {
+    PosCols c{};
+    c.dash_x = bx + 10;
+    c.date_x = bx + bw * 14 / 100;
+    c.amt_x  = bx + bw * 34 / 100;
+    c.buy_x  = bx + bw * 48 / 100;
+    c.val_x  = bx + bw * 62 / 100;
+    c.gain_x = bx + bw * 76 / 100;
     c.del_x  = bx + bw - 34;
     return c;
 }
@@ -132,6 +148,7 @@ float PortfolioRenderer::max_scroll_offset(const Portfolio& portfolio, int scree
     for (const Stock& st : portfolio.stocks()) {
         content_h += kStockRowH;
         if (panel_state.expanded.count(st.symbol())) {
+            content_h += kPanelColHdrH; // position sub-header
             content_h += kPosRowH * (int)portfolio.position_indices_for(st.symbol()).size();
         }
     }
@@ -225,16 +242,15 @@ void PortfolioRenderer::draw_portfolio_panel(const Portfolio& portfolio, Rectang
     }
 
     // ── Column header row ────────────────────────────────────────────────────
-    const PanelCols c = panel_cols(bx, bw);
+    const StockCols c = stock_cols(bx, bw);
+    const PosCols   pc = pos_cols(bx, bw);
     DrawRectangle(bx, list_top, bw, kPanelColHdrH, kTableHeader);
-    DrawText("Symbol",  c.sym_x,  list_top + 10, 15, kMuted);
-    DrawText("Name",    c.name_x, list_top + 10, 15, kMuted);
-    DrawText("Current", c.cur_x,  list_top + 10, 15, kMuted);
-    DrawText("Amount",  c.amt_x,  list_top + 10, 15, kMuted);
-    DrawText("Buy",     c.buy_x,  list_top + 10, 15, kMuted);
-    DrawText("Value",   c.val_x,  list_top + 10, 15, kMuted);
-    DrawText("Gain",    c.gain_x, list_top + 10, 15, kMuted);
-    DrawText("Date",    c.date_x, list_top + 10, 15, kMuted);
+    DrawText("Symbol",  c.sym_x,  list_top + 10, 15, kText);
+    DrawText("Name",    c.name_x, list_top + 10, 15, kText);
+    DrawText("Current", c.cur_x,  list_top + 10, 15, kText);
+    DrawText("Shares",  c.amt_x,  list_top + 10, 15, kText);
+    DrawText("Value",   c.val_x,  list_top + 10, 15, kText);
+    DrawText("Gain",    c.gain_x, list_top + 10, 15, kText);
     DrawLineEx({(float)bx, (float)(list_top + kPanelColHdrH)},
                {(float)(bx + bw), (float)(list_top + kPanelColHdrH)}, 1.f, kLine);
     list_top += kPanelColHdrH;
@@ -298,6 +314,16 @@ void PortfolioRenderer::draw_portfolio_panel(const Portfolio& portfolio, Rectang
 
         // Position sub-rows
         if (expanded) {
+            // Sub-header for position columns
+            DrawRectangle(bx, y, bw, kPanelColHdrH, kPanelAlt);
+            DrawText("Date",    pc.date_x, y + (kPanelColHdrH - 13) / 2, 13, kText);
+            DrawText("Shares",  pc.amt_x,  y + (kPanelColHdrH - 13) / 2, 13, kText);
+            DrawText("Buy",     pc.buy_x,  y + (kPanelColHdrH - 13) / 2, 13, kText);
+            DrawText("Value",   pc.val_x,  y + (kPanelColHdrH - 13) / 2, 13, kText);
+            DrawText("Gain",    pc.gain_x, y + (kPanelColHdrH - 13) / 2, 13, kText);
+            DrawLine(bx, y + kPanelColHdrH, bx + bw, y + kPanelColHdrH, kLine);
+            y += kPanelColHdrH;
+
             const auto& positions = portfolio.positions();
             for (std::size_t idx : portfolio.position_indices_for(st.symbol())) {
                 const Position& p = positions[idx];
@@ -308,45 +334,42 @@ void PortfolioRenderer::draw_portfolio_panel(const Portfolio& portfolio, Rectang
 
                 DrawRectangle(bx, y, bw, kPosRowH, kPanelDark);
 
-                // Indent indicator
-                DrawText("-", c.sym_x, y + (kPosRowH - 14) / 2, 14, kMuted);
+                // Date
+                if (editing_this && s.editing_field == PositionEditField::Date) {
+                    draw_text_field({(float)(pc.date_x - 2), (float)(y + 2),
+                                     (float)(pc.amt_x - pc.date_x - 8), (float)(kPosRowH - 4)},
+                                    "", s.edit_buf, true);
+                } else {
+                    DrawText(p.acquisition_date().c_str(), pc.date_x, y + (kPosRowH - 14) / 2, 14, kText);
+                }
 
                 // Amount
                 if (editing_this && s.editing_field == PositionEditField::Amount) {
-                    draw_text_field({(float)(c.amt_x - 2), (float)(y + 2),
-                                     (float)(c.buy_x - c.amt_x - 8), (float)(kPosRowH - 4)},
+                    draw_text_field({(float)(pc.amt_x - 2), (float)(y + 2),
+                                     (float)(pc.buy_x - pc.amt_x - 8), (float)(kPosRowH - 4)},
                                     "", s.edit_buf, true);
                 } else {
-                    DrawText(number(p.amount()).c_str(), c.amt_x, y + (kPosRowH - 14) / 2, 14, kText);
+                    DrawText(number(p.amount()).c_str(), pc.amt_x, y + (kPosRowH - 14) / 2, 14, kText);
                 }
 
                 // Buy price
                 if (editing_this && s.editing_field == PositionEditField::BuyPrice) {
-                    draw_text_field({(float)(c.buy_x - 2), (float)(y + 2),
-                                     (float)(c.val_x - c.buy_x - 8), (float)(kPosRowH - 4)},
+                    draw_text_field({(float)(pc.buy_x - 2), (float)(y + 2),
+                                     (float)(pc.val_x - pc.buy_x - 8), (float)(kPosRowH - 4)},
                                     "", s.edit_buf, true);
                 } else {
-                    DrawText(money(p.buy_price()).c_str(), c.buy_x, y + (kPosRowH - 14) / 2, 14, kText);
+                    DrawText(money(p.buy_price()).c_str(), pc.buy_x, y + (kPosRowH - 14) / 2, 14, kText);
                 }
 
-                DrawText(money(p.current_value()).c_str(), c.val_x, y + (kPosRowH - 14) / 2, 14, kText);
-                DrawText(percent(p.gain_loss_percent()).c_str(), c.gain_x, y + (kPosRowH - 14) / 2, 14,
+                DrawText(money(p.current_value()).c_str(), pc.val_x, y + (kPosRowH - 14) / 2, 14, kText);
+                DrawText(percent(p.gain_loss_percent()).c_str(), pc.gain_x, y + (kPosRowH - 14) / 2, 14,
                          gain_color(p.gain_loss()));
-
-                // Date
-                if (editing_this && s.editing_field == PositionEditField::Date) {
-                    draw_text_field({(float)(c.date_x - 2), (float)(y + 2),
-                                     (float)(c.del_x - c.date_x - 6), (float)(kPosRowH - 4)},
-                                    "", s.edit_buf, true);
-                } else {
-                    DrawText(p.acquisition_date().c_str(), c.date_x, y + (kPosRowH - 14) / 2, 14, kText);
-                }
 
                 // Delete on hover
                 if (phov) {
-                    DrawRectangleRounded({(float)c.del_x, (float)(y + (kPosRowH - 20) / 2), 20.f, 20.f},
+                    DrawRectangleRounded({(float)pc.del_x, (float)(y + (kPosRowH - 20) / 2), 20.f, 20.f},
                                          0.25f, 6, {161, 61, 70, 255});
-                    DrawText("x", c.del_x + 5, y + (kPosRowH - 20) / 2 + 2, 16, kTitle);
+                    DrawText("x", pc.del_x + 5, y + (kPosRowH - 20) / 2 + 2, 16, kTitle);
                 }
                 DrawLine(bx, y + kPosRowH, bx + bw, y + kPosRowH, kLine);
                 y += kPosRowH;
@@ -396,7 +419,7 @@ void PortfolioRenderer::draw_input_panel(const AddPanelState& panel, int screen_
     for (int i = 0; i < kFieldCount; ++i) {
         const int col = i % 3, row = i / 3;
         const int lx  = m.col_x[col], ly = m.row_y[row];
-        DrawText(labels[i], lx, ly, m.label_font, kMuted);
+        DrawText(labels[i], lx, ly, m.label_font, kText);
         draw_text_field({(float)lx, (float)(ly + m.label_font + m.label_gap),
                          (float)m.col_width, (float)m.field_h},
                         labels[i], panel.fields[i], i == panel.active_field);

@@ -17,6 +17,7 @@ endif()
 add_executable(portfolio_tracker
     src/main.cpp
     src/app_config.cpp
+    src/gui/utils.cpp
     src/portfolio_app.cpp
     src/portfolio_file.cpp
     src/portfolio.cpp
