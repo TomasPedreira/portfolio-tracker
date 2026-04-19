@@ -321,6 +321,7 @@ void PortfolioRenderer::draw_portfolio_panel(const Portfolio& portfolio, Rectang
             DrawText("Buy",     pc.buy_x,  y + (kPanelColHdrH - 13) / 2, 13, kText);
             DrawText("Value",   pc.val_x,  y + (kPanelColHdrH - 13) / 2, 13, kText);
             DrawText("Gain",    pc.gain_x, y + (kPanelColHdrH - 13) / 2, 13, kText);
+            DrawText("+", bx + bw - 54, y + (kPanelColHdrH - 18) / 2, 18, kInk);
             DrawLine(bx, y + kPanelColHdrH, bx + bw, y + kPanelColHdrH, kLine);
             y += kPanelColHdrH;
 

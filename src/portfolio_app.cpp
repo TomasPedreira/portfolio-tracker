@@ -422,6 +422,17 @@ bool PortfolioApp::handle_portfolio_panel_click(const Vector2& mouse, int screen
 
         // Position sub-rows (only if expanded)
         if (panel_state_.expanded.count(stocks[i].symbol())) {
+            // "+" in sub-header opens add-position panel pre-filled with this symbol
+            if (mouse.y >= y && mouse.y < y + kPanelColHdrH) {
+                if (mouse.x >= bx + bw - 65) {
+                    panel_.open = true;
+                    panel_.active_field = 0;
+                    panel_.error_message.clear();
+                    strncpy(panel_.fields[0], stocks[i].symbol().c_str(), 127);
+                    panel_.fields[0][127] = '\0';
+                }
+                return true;
+            }
             y += kPanelColHdrH;  // Skip the position sub-header row
             for (std::size_t idx : portfolio_.position_indices_for(stocks[i].symbol())) {
                 if (mouse.y >= y && mouse.y < y + kPosRowH) {
