@@ -204,11 +204,13 @@ void PortfolioApp::input() {
         handle_portfolio_panel_click(GetMousePosition(), sw, sh);
     }
 
-    // ── 4. Save button (header top-right) ─────────────────────────────────────
+    // ── 4. Save + Refresh buttons (header top-right) ──────────────────────────
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        constexpr int kBtnW = 90, kBtnH = 36, btn_y = 26;
+        constexpr int kBtnW = 90, kRefW = 80, kBtnH = 36, kBtnGap = 8, btn_y = 26;
         const int btn_x = sw - kMargin - kBtnW;
+        const int ref_x = btn_x - kRefW - kBtnGap;
         const Vector2 m = GetMousePosition();
+
         if (m.x >= btn_x && m.x <= btn_x + kBtnW && m.y >= btn_y && m.y <= btn_y + kBtnH) {
             if (!file_path_.empty())
                 PortfolioFile::save(portfolio_, file_path_);
@@ -216,6 +218,14 @@ void PortfolioApp::input() {
                 save_popup_.open = true;
                 save_popup_.error.clear();
                 memset(save_popup_.filename, 0, sizeof(save_popup_.filename));
+            }
+            return;
+        }
+
+        if (m.x >= ref_x && m.x <= ref_x + kRefW && m.y >= btn_y && m.y <= btn_y + kBtnH) {
+            if (!refresher_.is_busy() && !file_path_.empty()) {
+                refresh_consumed_ = false;
+                refresher_.start(file_path_);
             }
             return;
         }
@@ -509,12 +519,43 @@ void PortfolioApp::update() {
     const float max_scroll = renderer_.max_scroll_offset(portfolio_, GetScreenHeight(), panel_, panel_state_);
     scroll_offset_       = std::clamp(scroll_offset_, 0.f, max_scroll);
     save_popup_.file_set = !file_path_.empty();
+
+    // Startup auto-refresh: fires once as soon as a CSV file is available.
+    if (!did_startup_refresh_ && !file_path_.empty()) {
+        did_startup_refresh_ = true;
+        refresh_consumed_    = false;
+        refresher_.start(file_path_);
+    }
+
+    refresher_.poll();
+
+    // Sync refresh_state_ from refresher_ each frame.
+    refresh_state_.message = refresher_.last_message();
+    switch (refresher_.state()) {
+        case PriceRefresher::State::Idle:
+            refresh_state_.status = RefreshState::Status::Idle;
+            break;
+        case PriceRefresher::State::Running:
+            refresh_state_.status = RefreshState::Status::Running;
+            break;
+        case PriceRefresher::State::Succeeded:
+            refresh_state_.status = RefreshState::Status::Succeeded;
+            if (!refresh_consumed_) {
+                PortfolioFile::load_stock_prices_only(file_path_, portfolio_);
+                refresh_consumed_ = true;
+            }
+            break;
+        case PriceRefresher::State::Failed:
+            refresh_state_.status = RefreshState::Status::Failed;
+            refresh_consumed_     = true;
+            break;
+    }
 }
 
 void PortfolioApp::render() const {
     BeginDrawing();
     ClearBackground(Color{12, 30, 48, 255});
-    renderer_.draw(portfolio_, scroll_offset_, panel_, save_popup_, panel_state_);
+    renderer_.draw(portfolio_, scroll_offset_, panel_, save_popup_, panel_state_, refresh_state_);
     EndDrawing();
 }
 

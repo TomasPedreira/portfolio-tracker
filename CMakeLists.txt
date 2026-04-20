@@ -23,7 +23,17 @@ add_executable(portfolio_tracker
     src/portfolio.cpp
     src/portfolio_renderer.cpp
     src/position.cpp
+    src/price_refresher.cpp
     src/stock.cpp
+)
+
+# Copy the scripts folder next to the binary so the refresher can find it.
+add_custom_command(TARGET portfolio_tracker POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory
+        "$<TARGET_FILE_DIR:portfolio_tracker>/scripts"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/scripts/refresh_prices.py"
+        "$<TARGET_FILE_DIR:portfolio_tracker>/scripts/refresh_prices.py"
 )
 
 set_target_properties(portfolio_tracker PROPERTIES

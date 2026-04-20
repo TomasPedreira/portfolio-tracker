@@ -30,6 +30,14 @@ inline int panel_reserved(const AddPanelState& p, int screen_height) {
     return p.open ? tab + panel_form_height(screen_height) : tab;
 }
 
+// ── Refresh status (passed from PortfolioApp to renderer) ────────────────────
+
+struct RefreshState {
+    enum class Status { Idle, Running, Succeeded, Failed };
+    Status      status  = Status::Idle;
+    std::string message;
+};
+
 // ── Save popup ────────────────────────────────────────────────────────────────
 
 struct SavePopupState {
@@ -74,7 +82,8 @@ class PortfolioRenderer {
 public:
     void  draw(const Portfolio& portfolio, float scroll_offset,
                const AddPanelState& panel, const SavePopupState& save_popup,
-               const PortfolioPanelState& panel_state) const;
+               const PortfolioPanelState& panel_state,
+               const RefreshState& refresh) const;
 
     float max_scroll_offset(const Portfolio& portfolio, int screen_height,
                             const AddPanelState& panel,
@@ -82,7 +91,8 @@ public:
 
 private:
     void draw_header(const Portfolio& portfolio, int screen_width,
-                     const SavePopupState& save_popup) const;
+                     const SavePopupState& save_popup,
+                     const RefreshState& refresh) const;
     void draw_summary_card(Rectangle bounds, const char* label,
                            const std::string& value, Color accent) const;
     void draw_portfolio_panel(const Portfolio& portfolio, Rectangle bounds,

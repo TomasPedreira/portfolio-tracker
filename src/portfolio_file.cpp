@@ -96,6 +96,30 @@ Portfolio PortfolioFile::load(const std::string& path) {
     return portfolio;
 }
 
+bool PortfolioFile::load_stock_prices_only(const std::string& path, Portfolio& into) {
+    std::ifstream file(path);
+    if (!file.is_open()) return false;
+
+    enum class Section { None, Stocks, Other };
+    Section section = Section::None;
+
+    std::string line;
+    while (std::getline(file, line)) {
+        if (line.empty()) continue;
+        if (line == "[stocks]")    { section = Section::Stocks; continue; }
+        if (line[0] == '[')        { section = Section::Other;  continue; }
+        if (section != Section::Stocks) continue;
+        if (line.rfind("symbol", 0) == 0) continue;
+
+        const auto f = split_tab(line);
+        if (f.size() < 3) continue;
+        try {
+            into.update_stock_price(f[0], std::stod(f[2]));
+        } catch (...) {}
+    }
+    return true;
+}
+
 void PortfolioFile::save(const Portfolio& portfolio, const std::string& path) {
     std::ofstream file(path);
     if (!file.is_open()) return;

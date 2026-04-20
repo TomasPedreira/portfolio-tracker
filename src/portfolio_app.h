@@ -3,6 +3,7 @@
 
 #include "portfolio.h"
 #include "portfolio_renderer.h"
+#include "price_refresher.h"
 
 #include <string>
 
@@ -32,6 +33,11 @@ private:
     PortfolioPanelState panel_state_;
     float               backspace_timer_;
     std::string         file_path_;
+
+    PriceRefresher      refresher_;
+    RefreshState        refresh_state_;
+    bool                refresh_consumed_      = true;
+    bool                did_startup_refresh_   = false;
 };
 
 #endif

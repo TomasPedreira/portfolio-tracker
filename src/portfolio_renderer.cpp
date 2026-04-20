@@ -106,11 +106,12 @@ PosCols pos_cols(int bx, int bw) {
 
 void PortfolioRenderer::draw(const Portfolio& portfolio, float scroll_offset,
                              const AddPanelState& panel, const SavePopupState& save_popup,
-                             const PortfolioPanelState& panel_state) const {
+                             const PortfolioPanelState& panel_state,
+                             const RefreshState& refresh) const {
     const int sw = GetScreenWidth();
     const int sh = GetScreenHeight();
 
-    draw_header(portfolio, sw, save_popup);
+    draw_header(portfolio, sw, save_popup, refresh);
 
     const int summary_top = kHeaderHeight;
     const int card_w = (sw - kMargin * 2 - 36) / 3;
@@ -159,7 +160,8 @@ float PortfolioRenderer::max_scroll_offset(const Portfolio& portfolio, int scree
 // ── Header ────────────────────────────────────────────────────────────────────
 
 void PortfolioRenderer::draw_header(const Portfolio& portfolio, int screen_width,
-                                    const SavePopupState& save_popup) const {
+                                    const SavePopupState& save_popup,
+                                    const RefreshState& refresh) const {
     DrawText("Portfolio Tracker", kMargin, 24, 40, kTitle);
 
     const std::string subtitle = std::to_string(portfolio.positions().size()) + " open positions";
@@ -169,10 +171,31 @@ void PortfolioRenderer::draw_header(const Portfolio& portfolio, int screen_width
 
     constexpr int kBtnW = 90, kBtnH = 36, btn_y = 26;
     const int btn_x = screen_width - kMargin - kBtnW;
+
+    // Save button
     DrawRectangleRounded({(float)btn_x, (float)btn_y, kBtnW, kBtnH}, 0.2f, 8,
                          save_popup.file_set ? kBlue : kInk);
-    const char* lbl = save_popup.file_set ? "Save" : "Save as";
-    DrawText(lbl, btn_x + (kBtnW - MeasureText(lbl, 18)) / 2, btn_y + (kBtnH - 18) / 2, 18, kTitle);
+    const char* save_lbl = save_popup.file_set ? "Save" : "Save as";
+    DrawText(save_lbl, btn_x + (kBtnW - MeasureText(save_lbl, 18)) / 2,
+             btn_y + (kBtnH - 18) / 2, 18, kTitle);
+
+    // Refresh button (left of Save)
+    constexpr int kRefW = 80, kBtnGap = 8;
+    const int ref_x = btn_x - kRefW - kBtnGap;
+    const bool busy = (refresh.status == RefreshState::Status::Running);
+    const Color ref_col = busy ? kLine : kInk;
+    DrawRectangleRounded({(float)ref_x, (float)btn_y, kRefW, kBtnH}, 0.2f, 8, ref_col);
+    const char* ref_lbl = busy ? "..." : "Refresh";
+    DrawText(ref_lbl, ref_x + (kRefW - MeasureText(ref_lbl, 18)) / 2,
+             btn_y + (kBtnH - 18) / 2, 18, kTitle);
+
+    // Refresh status message (right-aligned, below buttons)
+    if (refresh.status != RefreshState::Status::Idle && !refresh.message.empty()) {
+        const Color msg_col = (refresh.status == RefreshState::Status::Failed) ? kRed : kMuted;
+        const int msg_w = MeasureText(refresh.message.c_str(), 18);
+        const int msg_x = btn_x + kBtnW - msg_w;
+        DrawText(refresh.message.c_str(), msg_x, 66, 18, msg_col);
+    }
 }
 
 // ── Summary card ─────────────────────────────────────────────────────────────
