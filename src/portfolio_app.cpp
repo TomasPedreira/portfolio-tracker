@@ -40,7 +40,7 @@ struct PanelCols {
     int arrow_x, sym_x, name_x, cur_x, amt_x, buy_x, val_x, gain_x, date_x, del_x;
 };
 struct PosCols {
-    int dash_x, date_x, amt_x, buy_x, val_x, gain_x, del_x;
+    int dash_x, date_x, amt_x, buy_x, val_x, diff_x, gain_x, del_x;
 };
 
 static PanelCols make_cols(int bx, int bw) {
@@ -65,8 +65,9 @@ static PosCols make_pos_cols(int bx, int bw) {
     c.date_x = bx + bw * 14 / 100;
     c.amt_x  = bx + bw * 34 / 100;
     c.buy_x  = bx + bw * 48 / 100;
-    c.val_x  = bx + bw * 62 / 100;
-    c.gain_x = bx + bw * 76 / 100;
+    c.val_x  = bx + bw * 60 / 100;
+    c.diff_x = bx + bw * 72 / 100;
+    c.gain_x = bx + bw * 84 / 100;
     c.del_x  = bx + bw - 34;
     return c;
 }

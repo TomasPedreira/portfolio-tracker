@@ -85,7 +85,7 @@ StockCols stock_cols(int bx, int bw) {
 
 // Column x positions for expanded position sub-rows and their sub-header.
 struct PosCols {
-    int dash_x, date_x, amt_x, buy_x, val_x, gain_x, del_x;
+    int dash_x, date_x, amt_x, buy_x, val_x, diff_x, gain_x, del_x;
 };
 
 PosCols pos_cols(int bx, int bw) {
@@ -94,8 +94,9 @@ PosCols pos_cols(int bx, int bw) {
     c.date_x = bx + bw * 14 / 100;
     c.amt_x  = bx + bw * 34 / 100;
     c.buy_x  = bx + bw * 48 / 100;
-    c.val_x  = bx + bw * 62 / 100;
-    c.gain_x = bx + bw * 76 / 100;
+    c.val_x  = bx + bw * 60 / 100;
+    c.diff_x = bx + bw * 72 / 100;
+    c.gain_x = bx + bw * 84 / 100;
     c.del_x  = bx + bw - 34;
     return c;
 }
@@ -320,6 +321,7 @@ void PortfolioRenderer::draw_portfolio_panel(const Portfolio& portfolio, Rectang
             DrawText("Shares",  pc.amt_x,  y + (kPanelColHdrH - 13) / 2, 13, kText);
             DrawText("Buy",     pc.buy_x,  y + (kPanelColHdrH - 13) / 2, 13, kText);
             DrawText("Value",   pc.val_x,  y + (kPanelColHdrH - 13) / 2, 13, kText);
+            DrawText("Diff",    pc.diff_x, y + (kPanelColHdrH - 13) / 2, 13, kText);
             DrawText("Gain",    pc.gain_x, y + (kPanelColHdrH - 13) / 2, 13, kText);
             DrawText("+", bx + bw - 54, y + (kPanelColHdrH - 18) / 2, 18, kInk);
             DrawLine(bx, y + kPanelColHdrH, bx + bw, y + kPanelColHdrH, kLine);
@@ -363,6 +365,8 @@ void PortfolioRenderer::draw_portfolio_panel(const Portfolio& portfolio, Rectang
                 }
 
                 DrawText(money(p.current_value()).c_str(), pc.val_x, y + (kPosRowH - 14) / 2, 14, kText);
+                DrawText(money(p.gain_loss()).c_str(), pc.diff_x, y + (kPosRowH - 14) / 2, 14,
+                         gain_color(p.gain_loss()));
                 DrawText(percent(p.gain_loss_percent()).c_str(), pc.gain_x, y + (kPosRowH - 14) / 2, 14,
                          gain_color(p.gain_loss()));
 
